@@ -4,11 +4,23 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Daily
-from .serializers import TaskSerializer
+from .serializers import DailySerializer, TaskSerializer
 
 
 class DailyTask(APIView):
     permission_classes = (permissions.IsAuthenticated, )
+
+    def get(self, request):
+        user = request.user
+        date = datetime.date(datetime.today())  # Today's date (UTC)
+
+        try:
+            daily, created = Daily.objects.get_or_create(user=user, date=date)
+        except Exception as e:
+            return Response({'error': str(e), 'message': 'Internal Server Error! Please try in sometime'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        serializer = DailySerializer(instance=daily)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         user = request.user
